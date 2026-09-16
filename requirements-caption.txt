@@ -1,0 +1,4 @@
+# captioning (caption.py)
+torch
+transformers
+pillow

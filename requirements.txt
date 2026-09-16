@@ -1,0 +1,6 @@
+# scraping (scraper.py)
+selenium
+beautifulsoup4
+requests
+python-dotenv
+pillow

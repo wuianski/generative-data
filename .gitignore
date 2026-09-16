@@ -1,0 +1,12 @@
+.env
+__pycache__/
+*.pyc
+.DS_Store
+firefox_profile/
+seen_hashes.json
+
+# scraped IG content — never publish
+data/
+assets/
+outputs/
+processing/**/*.json
