@@ -81,6 +81,29 @@ downloads the BLIP model (~1 GB) from Hugging Face.
 If you scrape before midnight but caption after, pass the scrape date
 explicitly: `caption.py --date YYYY-MM-DD`.
 
+## Daily scheduling (Windows)
+
+`run_daily.bat` runs both steps and logs to `logs\daily.log`. It assumes
+Miniconda at `%USERPROFILE%\miniconda3` — edit the two paths at the top if
+yours differs. Register it to run every day at 06:00:
+
+```bat
+schtasks /Create /TN "GenerativeData Daily" ^
+  /TR "\"C:\path\to\generative-data\run_daily.bat\"" ^
+  /SC DAILY /ST 06:00
+```
+
+Notes:
+
+- Keep the default "run only when user is logged on" — the scraper opens a
+  visible Firefox window and needs an interactive session.
+- To let the task wake the laptop, open Task Scheduler → the task →
+  Conditions → check "Wake the computer to run this task", and make sure the
+  laptop is plugged in (or allow wake on battery in Power Options).
+- Test immediately with `schtasks /Run /TN "GenerativeData Daily"`,
+  check `logs\daily.log` for progress.
+- Remove with `schtasks /Delete /TN "GenerativeData Daily" /F`.
+
 ## Output format
 
 `data/YYYY-MM-DD/captions.json`:

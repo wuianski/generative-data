@@ -4,6 +4,7 @@ __pycache__/
 .DS_Store
 firefox_profile/
 seen_hashes.json
+logs/
 
 # scraped IG content — never publish
 data/
