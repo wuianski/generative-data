@@ -9,12 +9,28 @@ Run with the `img2txt` conda env (torch + transformers already installed):
 
 import argparse
 import json
+import os
 from datetime import date, datetime
 from pathlib import Path
 
 import torch
 from PIL import Image
 from transformers import BlipForConditionalGeneration, BlipProcessor
+
+
+def keep_system_awake(enable: bool) -> None:
+    """On Windows, prevent automatic sleep while the run is in progress.
+
+    Needed because after Task Scheduler wakes the machine, Windows applies the
+    'unattended sleep timeout' (default: 2 minutes) instead of the normal one.
+    """
+    if os.name != "nt":
+        return
+    import ctypes
+    ES_CONTINUOUS = 0x80000000
+    ES_SYSTEM_REQUIRED = 0x00000001
+    flags = ES_CONTINUOUS | (ES_SYSTEM_REQUIRED if enable else 0)
+    ctypes.windll.kernel32.SetThreadExecutionState(flags)
 
 REPO_ROOT = Path(__file__).resolve().parent
 DATA_ROOT = REPO_ROOT / "data"
@@ -82,13 +98,17 @@ if __name__ == "__main__":
     args = parser.parse_args()
     device = pick_device(args.device)
 
-    if args.missing:
-        pending = [day for day in sorted(DATA_ROOT.glob("20*"))
-                   if (day / "images").is_dir() and not (day / "captions.json").exists()]
-        if not pending:
-            print("Nothing to do: every day folder already has captions.json")
-        for day in pending:
-            caption_folder(day / "images", day.name, device, args.limit)
-    else:
-        folder = Path(args.images_dir) if args.images_dir else DATA_ROOT / args.date / "images"
-        caption_folder(folder, args.date, device, args.limit)
+    keep_system_awake(True)
+    try:
+        if args.missing:
+            pending = [day for day in sorted(DATA_ROOT.glob("20*"))
+                       if (day / "images").is_dir() and not (day / "captions.json").exists()]
+            if not pending:
+                print("Nothing to do: every day folder already has captions.json")
+            for day in pending:
+                caption_folder(day / "images", day.name, device, args.limit)
+        else:
+            folder = Path(args.images_dir) if args.images_dir else DATA_ROOT / args.date / "images"
+            caption_folder(folder, args.date, device, args.limit)
+    finally:
+        keep_system_awake(False)

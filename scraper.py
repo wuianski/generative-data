@@ -38,6 +38,21 @@ USERNAME = os.getenv("INSTAGRAM_USERNAME")
 PASSWORD = os.getenv("INSTAGRAM_PASSWORD")
 
 
+def keep_system_awake(enable: bool) -> None:
+    """On Windows, prevent automatic sleep while the run is in progress.
+
+    Needed because after Task Scheduler wakes the machine, Windows applies the
+    'unattended sleep timeout' (default: 2 minutes) instead of the normal one.
+    """
+    if os.name != "nt":
+        return
+    import ctypes
+    ES_CONTINUOUS = 0x80000000
+    ES_SYSTEM_REQUIRED = 0x00000001
+    flags = ES_CONTINUOUS | (ES_SYSTEM_REQUIRED if enable else 0)
+    ctypes.windll.kernel32.SetThreadExecutionState(flags)
+
+
 def load_seen_hashes() -> set:
     if SEEN_HASHES_FILE.exists():
         return set(json.loads(SEEN_HASHES_FILE.read_text()))
@@ -131,6 +146,7 @@ def scrape(limit: int, run_date: str) -> Path:
     seen_urls = set()
     count = len(list(out_dir.glob("*.jpg")))  # resume if partially done today
 
+    keep_system_awake(True)
     driver = get_driver()
     try:
         driver.get("https://www.instagram.com")
@@ -197,6 +213,7 @@ def scrape(limit: int, run_date: str) -> Path:
         return out_dir
     finally:
         driver.quit()
+        keep_system_awake(False)
 
 
 if __name__ == "__main__":
