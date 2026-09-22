@@ -77,7 +77,18 @@ if __name__ == "__main__":
     parser.add_argument("--images-dir", default=None, help="override the images folder path")
     parser.add_argument("--device", default="auto", choices=["auto", "cuda", "mps", "cpu"])
     parser.add_argument("--limit", type=int, default=0, help="caption only the first N images (0 = all)")
+    parser.add_argument("--missing", action="store_true",
+                        help="caption every day folder that has images but no captions.json yet")
     args = parser.parse_args()
+    device = pick_device(args.device)
 
-    folder = Path(args.images_dir) if args.images_dir else DATA_ROOT / args.date / "images"
-    caption_folder(folder, args.date, pick_device(args.device), args.limit)
+    if args.missing:
+        pending = [day for day in sorted(DATA_ROOT.glob("20*"))
+                   if (day / "images").is_dir() and not (day / "captions.json").exists()]
+        if not pending:
+            print("Nothing to do: every day folder already has captions.json")
+        for day in pending:
+            caption_folder(day / "images", day.name, device, args.limit)
+    else:
+        folder = Path(args.images_dir) if args.images_dir else DATA_ROOT / args.date / "images"
+        caption_folder(folder, args.date, device, args.limit)
